@@ -1,0 +1,64 @@
+name: Documentation
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-documentation-${{ github.ref }}
+  # docs-contract can become a required check after a verified run.
+  cancel-in-progress: false
+
+jobs:
+  prepare_docs:
+    name: prepare-documentation-policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      documentation_python: ${{ steps.toolchain.outputs.documentation_python }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Load CI toolchain policy
+        id: toolchain
+        run: python scripts/ci_toolchain.py emit-github-output >> "$GITHUB_OUTPUT"
+
+  docs-contract:
+    name: docs-contract
+    needs: prepare_docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@21c1be1b93ad9ed58fa840aacc3f279cde2a72ff # v24.2.0
+        with:
+          globs: "**/*.md"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ needs.prepare_docs.outputs.documentation_python }}
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+
+      - name: Install documentation validator dependencies
+        run: python -m pip install --disable-pip-version-check --requirement requirements-docs.txt
+
+      - name: Validate rendered documentation contract
+        run: python scripts/validate_scaffold.py --repository-root .

@@ -129,10 +129,11 @@ python -m pip check
 - [Pull request template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Issue forms](.github/ISSUE_TEMPLATE/)
 
-The project now has a private GitHub remote. The CI workflow is configured for
-pull requests, pushes to `main`, merge groups, and manual runs. Maintainer
-ownership and issue forms are configured. Branch protection and a private
-security contact still need to be configured before broader collaboration.
+The project now has a private GitHub remote. The CI and documentation workflows
+are configured for pull requests, pushes to `main`, merge groups, and manual
+runs. Maintainer ownership and issue forms are configured. Branch protection
+and a private security contact still need to be configured before broader
+collaboration.
 
 ## 9. License
 
