@@ -1,0 +1,110 @@
+{
+  "schema-version": 1,
+  "files": [
+    {
+      "id": "readme",
+      "label": "README",
+      "scope": "github-community-profile",
+      "kind": "file",
+      "candidates": [".github/README.md", "README.md", "docs/README.md"],
+      "tracker": "none"
+    },
+    {
+      "id": "license",
+      "label": "License",
+      "scope": "github-community-profile",
+      "kind": "file",
+      "candidates": ["LICENSE", "LICENSE.md", "LICENSE.txt", "COPYING", "COPYING.md", "COPYING.txt"],
+      "tracker": "none"
+    },
+    {
+      "id": "code_of_conduct",
+      "label": "Code of Conduct",
+      "scope": "github-community-health",
+      "kind": "file",
+      "candidates": [".github/CODE_OF_CONDUCT.md", "CODE_OF_CONDUCT.md", "docs/CODE_OF_CONDUCT.md"],
+      "tracker": "contributor-covenant"
+    },
+    {
+      "id": "contributing",
+      "label": "Contributing guide",
+      "scope": "github-community-health",
+      "kind": "file",
+      "candidates": [".github/CONTRIBUTING.md", "CONTRIBUTING.md", "docs/CONTRIBUTING.md"],
+      "tracker": "none"
+    },
+    {
+      "id": "security",
+      "label": "Security policy",
+      "scope": "github-community-health",
+      "kind": "file",
+      "candidates": [".github/SECURITY.md", "SECURITY.md", "docs/SECURITY.md"],
+      "tracker": "none"
+    },
+    {
+      "id": "support",
+      "label": "Support policy",
+      "scope": "github-community-health",
+      "kind": "file",
+      "candidates": [".github/SUPPORT.md", "SUPPORT.md", "docs/SUPPORT.md"],
+      "tracker": "none"
+    },
+    {
+      "id": "governance",
+      "label": "Governance",
+      "scope": "github-community-health",
+      "kind": "file",
+      "candidates": [".github/GOVERNANCE.md", "GOVERNANCE.md", "docs/GOVERNANCE.md"],
+      "tracker": "none"
+    },
+    {
+      "id": "funding",
+      "label": "Funding",
+      "scope": "github-community-health",
+      "kind": "file",
+      "candidates": [".github/FUNDING.yml", ".github/FUNDING.yaml"],
+      "tracker": "none"
+    },
+    {
+      "id": "issue_templates",
+      "label": "Issue templates",
+      "scope": "github-community-health",
+      "kind": "directory",
+      "candidates": [".github/ISSUE_TEMPLATE"],
+      "tracker": "none"
+    },
+    {
+      "id": "pull_request_template",
+      "label": "Pull request template",
+      "scope": "github-community-health",
+      "kind": "any",
+      "candidates": [".github/PULL_REQUEST_TEMPLATE.md", "PULL_REQUEST_TEMPLATE.md", "docs/PULL_REQUEST_TEMPLATE.md", ".github/PULL_REQUEST_TEMPLATE"],
+      "allow_multiple": true,
+      "tracker": "none"
+    },
+    {
+      "id": "discussion_templates",
+      "label": "Discussion category forms",
+      "scope": "github-community-health",
+      "kind": "directory",
+      "candidates": [".github/DISCUSSION_TEMPLATE"],
+      "tracker": "none"
+    },
+    {
+      "id": "codeowners",
+      "label": "CODEOWNERS",
+      "scope": "repo-scaffold-extension",
+      "kind": "file",
+      "candidates": [".github/CODEOWNERS", "CODEOWNERS", "docs/CODEOWNERS"],
+      "tracker": "none"
+    },
+    {
+      "id": "citation",
+      "label": "Citation metadata",
+      "scope": "repo-scaffold-extension",
+      "kind": "file",
+      "candidates": ["CITATION.cff"],
+      "tracker": "none"
+    }
+  ]
+}

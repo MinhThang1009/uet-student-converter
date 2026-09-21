@@ -12,6 +12,7 @@ channel yet.
 
 ## When publishing the repository
 
-The maintainer should publish an issue template and provide a specific support
-channel before opening the project to broader collaboration. Do not send
-security issues through a public channel; see [SECURITY.md](SECURITY.md).
+Use the [issue forms](.github/ISSUE_TEMPLATE/) for normal bug reports and
+feature requests. The maintainer should provide a specific support channel
+before opening the project to broader collaboration. Do not send security
+issues through a public channel; see [SECURITY.md](SECURITY.md).

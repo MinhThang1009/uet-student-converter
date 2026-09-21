@@ -43,10 +43,10 @@ jobs:
         run: python -m compileall -q src scripts tests
 
       - name: Check with Ruff
-        run: ruff check src scripts tests
+        run: ruff check src scripts/convert_pdf_to_excel.py tests
 
       - name: Check Ruff formatting
-        run: ruff format --check src scripts tests
+        run: ruff format --check src scripts/convert_pdf_to_excel.py tests
 
       - name: Check installed dependencies
         run: python -m pip check

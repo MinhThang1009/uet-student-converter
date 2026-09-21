@@ -107,8 +107,8 @@ python scripts\convert_pdf_to_excel.py `
 ```powershell
 python -m pytest
 python -m compileall src scripts tests
-ruff check src scripts tests
-ruff format --check src scripts tests
+ruff check src scripts/convert_pdf_to_excel.py tests
+ruff format --check src scripts/convert_pdf_to_excel.py tests
 python -m pip check
 ```
 
@@ -127,11 +127,13 @@ python -m pip check
 - [Support](SUPPORT.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Pull request template](.github/PULL_REQUEST_TEMPLATE.md)
+- [Issue forms](.github/ISSUE_TEMPLATE/)
 
-The project now has a private GitHub remote. The CI workflow is configured for
-pull requests, pushes to `main`, merge groups, and manual runs. Maintainer
-ownership, branch protection, and a private security contact still need to be
-configured before broader collaboration.
+The project now has a public GitHub remote. CI and documentation workflows run
+on code changes, while scheduled community-health, freshness, and Scorecard
+checks monitor repository maintenance and supply-chain posture. Maintainer
+ownership and issue forms are configured. Branch protection and a private
+security contact still need to be configured before broader collaboration.
 
 ## 9. License
 

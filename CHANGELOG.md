@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Parser and Excel-writer tests.
 - Local GitHub Community health files.
 - A pinned GitHub Actions CI workflow for the Python checks.
+- A documentation workflow for Markdown and scaffold validation.
+- Scheduled community-health and freshness reminder workflows.
+- Public-repository Scorecard supply-chain workflow.
+- CODEOWNERS and English issue forms for bug and feature reports.
 
 ### Changed
 

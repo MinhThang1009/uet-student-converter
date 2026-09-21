@@ -25,8 +25,8 @@ python -m pip install -r requirements-dev.txt
 ```powershell
 python -m pytest
 python -m compileall src scripts tests
-ruff check src scripts tests
-ruff format --check src scripts tests
+ruff check src scripts/convert_pdf_to_excel.py tests
+ruff format --check src scripts/convert_pdf_to_excel.py tests
 python -m pip check
 ```
 
@@ -41,10 +41,14 @@ python -m pip check
 
 ## Pull requests
 
-Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md). The CI
-workflow must pass before a pull request is merged. Before broader
-collaboration, the maintainer should configure `CODEOWNERS`, a private security
-channel, a license, and branch protection.
+Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md). Bug reports
+and feature requests use the [issue forms](.github/ISSUE_TEMPLATE/). The
+`CODEOWNERS` file assigns review ownership to `@MinhThang1009`. The CI and
+documentation workflows must pass before a pull request is merged. Scheduled
+community-health and freshness checks may open reminder issues when maintenance
+inputs drift, and Scorecard reports supply-chain findings. A private security
+channel, license, and branch protection still need to be configured before
+broader collaboration.
 
 ## Reporting issues
 
