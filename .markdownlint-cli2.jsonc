@@ -1,0 +1,28 @@
+{
+  "config": {
+    "default": true,
+    "MD012": {
+      "maximum": 2
+    },
+    "MD013": false,
+    "MD024": {
+      "siblings_only": true
+    },
+    "MD033": false,
+    "MD034": false,
+    "MD038": false,
+    "MD041": false
+  },
+  "ignores": [
+    ".git/**",
+    ".mypy_cache/**",
+    ".pytest_cache/**",
+    ".ruff_cache/**",
+    ".venv/**",
+    "build/**",
+    "dist/**",
+    "node_modules/**",
+    "vendor/**",
+    "venv/**"
+  ]
+}
