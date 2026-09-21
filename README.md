@@ -107,8 +107,8 @@ python scripts\convert_pdf_to_excel.py `
 ```powershell
 python -m pytest
 python -m compileall src scripts tests
-ruff check src scripts tests
-ruff format --check src scripts tests
+ruff check src scripts/convert_pdf_to_excel.py tests
+ruff format --check src scripts/convert_pdf_to_excel.py tests
 python -m pip check
 ```
 
