@@ -129,6 +129,10 @@ python -m pip check
 - [Pull request template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Issue forms](.github/ISSUE_TEMPLATE/)
 
+Release Please manages Python release PRs and draft GitHub Releases from
+Conventional Commits. The repository secret `RELEASE_PLEASE_TOKEN` is required
+for the release workflow.
+
 The project now has a public GitHub remote. CI and documentation workflows run
 on code changes, while scheduled community-health, freshness, and Scorecard
 checks monitor repository maintenance and supply-chain posture. Maintainer

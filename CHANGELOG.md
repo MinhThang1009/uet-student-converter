@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A documentation workflow for Markdown and scaffold validation.
 - Scheduled community-health and freshness reminder workflows.
 - Public-repository Scorecard supply-chain workflow.
+- Release Please configuration for Python versions and draft GitHub Releases.
 - CODEOWNERS and English issue forms for bug and feature reports.
 
 ### Changed

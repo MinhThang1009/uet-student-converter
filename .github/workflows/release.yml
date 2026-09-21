@@ -1,0 +1,367 @@
+name: Release engine
+
+# Reusable and manually dispatchable engine that builds and publishes one GitHub
+# Release for an explicit tag. Assets are attached while the Release is a draft,
+# then the draft is published so the workflow is compatible with repositories
+# that enforce immutable releases.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Full version tag to build and publish
+        required: true
+        type: string
+      commit_sha:
+        description: Full commit SHA that the version tag must resolve to
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Full version tag to build and publish
+        required: true
+        type: string
+      commit_sha:
+        description: Full commit SHA that the version tag must resolve to
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # Release state is shared by tag. Serialize duplicate callers instead of letting
+  # them both observe the same draft/absent state and race the following mutations.
+  group: repo-scaffold-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_COMMIT_SHA: ${{ inputs.commit_sha }}
+    steps:
+      - name: Verify tag target
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "${RELEASE_TAG}" =~ ^v.+ ]]; then
+            echo "::error::Release tag must start with 'v' and contain a version value."
+            exit 1
+          fi
+          if [[ ! "${RELEASE_COMMIT_SHA}" =~ ^[0-9a-fA-F]+$ ]] ||
+            { [[ "${#RELEASE_COMMIT_SHA}" -ne 40 ]] &&
+              [[ "${#RELEASE_COMMIT_SHA}" -ne 64 ]]; }; then
+            echo "::error::Release commit must be a full SHA-1 or SHA-256 Git object ID."
+            exit 1
+          fi
+
+          verify_tag_target() {
+            local encoded_tag object_sha object_type ref_endpoint ref_json
+            local tag_endpoint tag_json
+            encoded_tag="$(jq -Rr @uri <<<"${RELEASE_TAG}")"
+            ref_endpoint="repos/${GITHUB_REPOSITORY}/git/ref/tags/${encoded_tag}"
+            if ! ref_json="$(gh api "${ref_endpoint}")"; then
+              echo "::error::Could not read the exact release tag through the GitHub API. Verify that it exists and Contents read permission is available."
+              return 1
+            fi
+            object_type="$(jq -r '.object.type // empty' <<<"${ref_json}")"
+            object_sha="$(jq -r '.object.sha // empty' <<<"${ref_json}")"
+
+            for _ in {1..32}; do
+              if [[ ! "${object_sha}" =~ ^[0-9a-fA-F]+$ ]] ||
+                { [[ "${#object_sha}" -ne 40 ]] &&
+                  [[ "${#object_sha}" -ne 64 ]]; }; then
+                echo "::error::The release tag API returned an invalid Git object ID."
+                return 1
+              fi
+              case "${object_type}" in
+                commit)
+                  if [[ "${object_sha,,}" != "${RELEASE_COMMIT_SHA,,}" ]]; then
+                    echo "::error::The release tag does not resolve to the expected commit SHA."
+                    return 1
+                  fi
+                  return 0
+                  ;;
+                tag)
+                  tag_endpoint="repos/${GITHUB_REPOSITORY}/git/tags/${object_sha}"
+                  if ! tag_json="$(gh api "${tag_endpoint}")"; then
+                    echo "::error::Could not peel an annotated release tag."
+                    return 1
+                  fi
+                  object_type="$(jq -r '.object.type // empty' <<<"${tag_json}")"
+                  object_sha="$(jq -r '.object.sha // empty' <<<"${tag_json}")"
+                  ;;
+                *)
+                  echo "::error::The release tag resolves to '${object_type}', not a commit."
+                  return 1
+                  ;;
+              esac
+            done
+            echo "::error::The release tag contains more than 32 nested annotated tags."
+            return 1
+          }
+          verify_tag_target
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # A short tag name is ambiguous when a branch has the same name and
+          # does not bind checkout to the commit that triggered the release.
+          ref: ${{ inputs.commit_sha }}
+          # Do not expose the job's contents:write token to project build scripts
+          # through the repository's local Git configuration.
+          persist-credentials: false
+
+      - name: Build artifact
+        # Default: archive the tracked source tree (git archive respects
+        # .gitattributes `export-ignore`). Replace with the real build for the
+        # project (compile a binary, package a plugin, bundle assets, etc.). Put
+        # every file that should be attached to the Release under dist/.
+        run: |
+          set -euo pipefail
+
+          artifact_tag=""
+          unsafe_run=false
+          while IFS= read -r -n 1 character; do
+            case "${character}" in
+              [A-Za-z0-9._-])
+                artifact_tag="${artifact_tag}${character}"
+                unsafe_run=false
+                ;;
+              *)
+                if [[ "${unsafe_run}" == false ]]; then
+                  artifact_tag="${artifact_tag}-"
+                  unsafe_run=true
+                fi
+                ;;
+            esac
+          done < <(printf '%s' "${RELEASE_TAG}")
+          artifact_tag="${artifact_tag#"${artifact_tag%%[!._-]*}"}"
+          artifact_tag="${artifact_tag%"${artifact_tag##*[!._-]}"}"
+          if [[ -z "${artifact_tag}" ]]; then
+            echo "::error::The tag does not contain any characters safe for an artifact filename."
+            exit 1
+          fi
+          if [[ "${#artifact_tag}" -gt 120 ]]; then
+            artifact_tag_hash="$(printf '%s' "${artifact_tag}" | sha256sum)"
+            artifact_tag="${artifact_tag:0:100}-${artifact_tag_hash:0:16}"
+          fi
+          mkdir -p dist
+          git archive --worktree-attributes --format=zip --output "dist/uet-student-converter-${artifact_tag}.zip" HEAD
+
+      - name: Validate release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -d dist ]] || ! find dist -type f -print -quit | grep -q .; then
+            echo "::error::No release artifacts were produced under dist/."
+            exit 1
+          fi
+          if find dist -type l -print -quit | grep -q .; then
+            echo "::error::Release artifacts must not contain symbolic links."
+            exit 1
+          fi
+          if find dist ! -type d ! -type f -print -quit | grep -q .; then
+            echo "::error::Release artifacts must contain only directories and regular files."
+            exit 1
+          fi
+
+      - name: Transfer release artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-assets-${{ inputs.commit_sha }}
+          path: dist/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+
+  attest:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Receive release artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets-${{ inputs.commit_sha }}
+          path: dist/
+
+      - name: Validate downloaded artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -d dist ]] || ! find dist -type f -print -quit | grep -q .; then
+            echo "::error::No release artifacts were downloaded under dist/."
+            exit 1
+          fi
+          if find dist -type l -print -quit | grep -q .; then
+            echo "::error::Downloaded release artifacts must not contain symbolic links."
+            exit 1
+          fi
+          if find dist ! -type d ! -type f -print -quit | grep -q .; then
+            echo "::error::Downloaded release artifacts must contain only directories and regular files."
+            exit 1
+          fi
+
+      - name: Attest release artifacts
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: dist/**
+
+  publish:
+    needs: [build, attest]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_COMMIT_SHA: ${{ inputs.commit_sha }}
+    steps:
+      - name: Receive release artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets-${{ inputs.commit_sha }}
+          path: dist/
+
+      - name: Attach assets and publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # release-please creates a draft for this tag. Manual tags have no Release yet.
+        # Drafts are returned by the list endpoint to tokens with push access; the
+        # get-by-tag endpoint only returns published Releases.
+        run: |
+          set -euo pipefail
+
+          if find dist -type l -print -quit | grep -q .; then
+            echo "::error::Downloaded release artifacts must not contain symbolic links."
+            exit 1
+          fi
+          if find dist ! -type d ! -type f -print -quit | grep -q .; then
+            echo "::error::Downloaded release artifacts must contain only directories and regular files."
+            exit 1
+          fi
+          mapfile -d '' -t assets < <(find dist -type f -print0)
+          if [[ "${#assets[@]}" -eq 0 ]]; then
+            echo "::error::No release artifacts were produced under dist/."
+            exit 1
+          fi
+          mapfile -d '' -t asset_names < <(
+            for asset in "${assets[@]}"; do
+              printf '%s\0' "${asset##*/}"
+            done
+          )
+          for asset in "${assets[@]}"; do
+            if [[ "${asset}" == *'#'* ]]; then
+              echo "::error::Release artifact paths cannot contain '#': ${asset}"
+              exit 1
+            fi
+          done
+          asset_count="${#asset_names[@]}"
+          for ((index = 0; index < asset_count; index++)); do
+            for ((previous = 0; previous < index; previous++)); do
+              if [[ "${asset_names[index]}" == "${asset_names[previous]}" ]]; then
+                echo "::error::Release artifacts must have unique basenames: ${asset_names[index]}"
+                exit 1
+              fi
+            done
+          done
+
+          # Re-check immediately before mutating the Release. Build input remains
+          # pinned to RELEASE_COMMIT_SHA even if a tag is moved meanwhile.
+          verify_tag_target() {
+            local encoded_tag object_sha object_type ref_endpoint ref_json
+            local tag_endpoint tag_json
+            encoded_tag="$(jq -Rr @uri <<<"${RELEASE_TAG}")"
+            ref_endpoint="repos/${GITHUB_REPOSITORY}/git/ref/tags/${encoded_tag}"
+            if ! ref_json="$(gh api "${ref_endpoint}")"; then
+              echo "::error::Could not read the exact release tag through the GitHub API."
+              return 1
+            fi
+            object_type="$(jq -r '.object.type // empty' <<<"${ref_json}")"
+            object_sha="$(jq -r '.object.sha // empty' <<<"${ref_json}")"
+
+            for _ in {1..32}; do
+              if [[ ! "${object_sha}" =~ ^[0-9a-fA-F]+$ ]] ||
+                { [[ "${#object_sha}" -ne 40 ]] &&
+                  [[ "${#object_sha}" -ne 64 ]]; }; then
+                echo "::error::The release tag API returned an invalid Git object ID."
+                return 1
+              fi
+              case "${object_type}" in
+                commit)
+                  if [[ "${object_sha,,}" != "${RELEASE_COMMIT_SHA,,}" ]]; then
+                    echo "::error::The release tag no longer resolves to the expected commit SHA."
+                    return 1
+                  fi
+                  return 0
+                  ;;
+                tag)
+                  tag_endpoint="repos/${GITHUB_REPOSITORY}/git/tags/${object_sha}"
+                  if ! tag_json="$(gh api "${tag_endpoint}")"; then
+                    echo "::error::Could not peel an annotated release tag."
+                    return 1
+                  fi
+                  object_type="$(jq -r '.object.type // empty' <<<"${tag_json}")"
+                  object_sha="$(jq -r '.object.sha // empty' <<<"${tag_json}")"
+                  ;;
+                *)
+                  echo "::error::The release tag resolves to '${object_type}', not a commit."
+                  return 1
+                  ;;
+              esac
+            done
+            echo "::error::The release tag contains more than 32 nested annotated tags."
+            return 1
+          }
+          verify_tag_target
+
+          publish_draft() {
+            # Keep a moved tag from crossing the publication boundary. The second
+            # check detects the remaining request-sized race window; immutable
+            # releases lock the tag when publication succeeds.
+            verify_tag_target
+            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --draft=false
+            if ! verify_tag_target; then
+              echo "::error::The Release was published while its tag target changed. Treat this as a release-integrity incident."
+              return 1
+            fi
+          }
+
+          release_state="$(
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+              --jq '.[] | select(.tag_name == env.RELEASE_TAG) | [.draft, .immutable] | @tsv'
+          )"
+          read -r is_draft is_immutable <<<"${release_state}"
+
+          if [[ -z "${release_state}" ]]; then
+            # Never let gh recreate a tag that disappeared after verification.
+            gh release create "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --verify-tag --draft \
+              --title "${RELEASE_TAG}" --generate-notes
+            gh release upload "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" "${assets[@]}" --clobber
+            publish_draft
+          elif [[ "${is_draft}" == "true" ]]; then
+            gh release upload "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" "${assets[@]}" --clobber
+            publish_draft
+          elif [[ "${is_immutable}" == "true" ]]; then
+            echo "::error::The Release is already published and immutable; its assets cannot be changed."
+            exit 1
+          else
+            # `gh release upload --clobber` deletes an existing asset before it uploads
+            # the replacement. A failed upload would therefore damage a published
+            # mutable Release, so reruns may repair drafts but never published Releases.
+            echo "::error::The Release is already published and mutable; refusing to replace public assets. Create a new version tag instead."
+            exit 1
+          fi
