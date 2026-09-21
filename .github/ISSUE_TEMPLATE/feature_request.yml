@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest a new feature
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What problem should this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the desired behavior and affected project surface.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe alternatives or workarounds considered.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include relevant constraints, compatibility concerns, or authoritative sources.
+    validations:
+      required: false
+  - type: checkboxes
+    id: sensitive_information
+    attributes:
+      label: Sensitive information
+      options:
+        - label: I did not include secrets, credentials, or private student information.
+          required: true
