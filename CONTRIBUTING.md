@@ -44,9 +44,10 @@ python -m pip check
 Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md). Bug reports
 and feature requests use the [issue forms](.github/ISSUE_TEMPLATE/). The
 `CODEOWNERS` file assigns review ownership to `@MinhThang1009`. The CI and
-documentation workflows must pass before a pull request is merged. A private
-security channel, license, and branch protection still need to be configured
-before broader collaboration.
+documentation workflows must pass before a pull request is merged. Scheduled
+community-health and freshness checks may open reminder issues when maintenance
+inputs drift. A private security channel, license, and branch protection still
+need to be configured before broader collaboration.
 
 ## Reporting issues
 

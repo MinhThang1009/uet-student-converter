@@ -1,0 +1,108 @@
+name: Community health upstream
+
+on:
+  schedule:
+    - cron: "41 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  upstream-drift:
+    name: community-health-upstream
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+
+      - name: Check community-health upstreams
+        id: audit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set +e
+          python scripts/check_community_health.py \
+            --repository-root . \
+            --repository "$REPOSITORY" \
+            --json-output "$RUNNER_TEMP/community-health.json" \
+            --markdown-output "$RUNNER_TEMP/community-health.md"
+          checker_exit=$?
+          set -e
+          if [[ ! -f "$RUNNER_TEMP/community-health.md" ]]; then
+            printf '%s\n' \
+              '<!-- repo-scaffold-community-health-drift -->' \
+              '# Community-health upstream report' \
+              '' \
+              'The checker failed before it could produce a report. Inspect this workflow run before updating any policy.' \
+              > "$RUNNER_TEMP/community-health.md"
+            checker_exit=2
+          fi
+          printf 'checker_exit=%s\n' "$checker_exit" >> "$GITHUB_OUTPUT"
+
+      - name: Add report to job summary
+        shell: bash
+        run: cat "$RUNNER_TEMP/community-health.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reconcile reminder issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          CHECKER_EXIT: ${{ steps.audit.outputs.checker_exit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          marker='<!-- repo-scaffold-community-health-drift -->'
+          title='Community-health upstream update required'
+          issue_numbers_output=$(
+            gh api --hostname github.com --paginate \
+              "repos/${REPOSITORY}/issues?state=open&per_page=100" \
+              --jq '.[] | select(.pull_request == null) | select((.body // "") | contains("<!-- repo-scaffold-community-health-drift -->")) | .number'
+          )
+          issue_numbers=()
+          if [[ -n "$issue_numbers_output" ]]; then
+            mapfile -t issue_numbers <<< "$issue_numbers_output"
+          fi
+          if (( ${#issue_numbers[@]} > 1 )); then
+            printf 'Found multiple open community-health reminder issues.\n' >&2
+            exit 1
+          fi
+          if [[ "$CHECKER_EXIT" == '0' ]]; then
+            if (( ${#issue_numbers[@]} == 1 )); then
+              gh issue close "${issue_numbers[0]}" \
+                --repo "github.com/${REPOSITORY}" \
+                --comment 'The scheduled upstream check is clean, so this reminder is closing automatically.'
+            fi
+            exit 0
+          fi
+          grep -Fq "$marker" "$RUNNER_TEMP/community-health.md"
+          if (( ${#issue_numbers[@]} == 1 )); then
+            gh issue edit "${issue_numbers[0]}" \
+              --repo "github.com/${REPOSITORY}" \
+              --title "$title" \
+              --body-file "$RUNNER_TEMP/community-health.md"
+          else
+            gh issue create \
+              --repo "github.com/${REPOSITORY}" \
+              --title "$title" \
+              --body-file "$RUNNER_TEMP/community-health.md"
+          fi
+          if [[ "$CHECKER_EXIT" == '2' ]]; then
+            printf 'One or more upstream checks were indeterminate.\n' >&2
+            exit 1
+          fi
