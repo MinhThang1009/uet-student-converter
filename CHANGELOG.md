@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 * Scheduled community-health and freshness reminder workflows.
 * Public-repository Scorecard supply-chain workflow.
 * Release Please configuration for Python versions and draft GitHub Releases.
+* MIT License for the project source.
 * CODEOWNERS and English issue forms for bug and feature reports.
 
 ### Changed

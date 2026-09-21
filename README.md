@@ -141,5 +141,5 @@ security contact still need to be configured before broader collaboration.
 
 ## 9. License
 
-No distribution license has been selected. Add a `LICENSE` file before sharing
-the project publicly.
+The project is licensed under the MIT License. See [LICENSE](LICENSE) for the
+full text.
