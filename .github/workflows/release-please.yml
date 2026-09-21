@@ -1,0 +1,50 @@
+name: release-please
+
+# On every push to the default branch, release-please opens/updates a "release PR" that bumps the
+# version and CHANGELOG from Conventional Commits. Merging that PR creates a git tag and
+# draft GitHub Release. A dependent job then calls the reusable release engine,
+# so artifact publication cannot race tag creation against draft creation.
+#
+# Pinned to the immutable commit for v5.0.0. Dependabot can update the SHA.
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release_please:
+    name: release-please
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      commit_sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          # Use a PAT so release-please PRs can trigger their checks. It also lets a
+          # PAT-backed label-gated merge trigger this default-branch workflow.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+  publish_release:
+    name: Publish release assets
+    needs: release_please
+    if: ${{ needs.release_please.outputs.release_created == 'true' }}
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.release_please.outputs.tag_name }}
+      commit_sha: ${{ needs.release_please.outputs.commit_sha }}

@@ -55,3 +55,10 @@ broader collaboration.
 For normal bugs, provide minimal reproduction steps, the Python version, the
 operating system, and logs with sensitive data removed. For security issues,
 see [SECURITY.md](SECURITY.md) and do not publish exploit details.
+
+## Releases
+
+Release Please manages version bumps and changelogs from Conventional Commits.
+Do not create a release tag manually while a Release Please PR is open. Review
+and merge the generated release PR, then publish the resulting draft GitHub
+Release after verifying its tag and changelog.
