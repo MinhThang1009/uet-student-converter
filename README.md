@@ -4,6 +4,9 @@
 
 Convert K70 student lists from PDF to Excel using the UET template.
 
+[![CI](https://github.com/MinhThang1009/uet-student-converter/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MinhThang1009/uet-student-converter/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/MinhThang1009/uet-student-converter)](LICENSE)
+
 </div>
 
 ## Contents
@@ -133,11 +136,11 @@ Release Please manages Python release PRs and draft GitHub Releases from
 Conventional Commits. The repository secret `RELEASE_PLEASE_TOKEN` is required
 for the release workflow.
 
-The project now has a public GitHub remote. CI and documentation workflows run
-on code changes, while scheduled community-health, freshness, and Scorecard
-checks monitor repository maintenance and supply-chain posture. Maintainer
-ownership and issue forms are configured. Branch protection and a private
-security contact still need to be configured before broader collaboration.
+The repository is public. Use the issue forms for routine support and pull
+requests for contributions. CI and documentation checks run on pull requests,
+but required checks are not currently enforced on `main`. Private vulnerability
+reporting is also not enabled; read [SECURITY.md](SECURITY.md) before disclosing
+sensitive information.
 
 ## 9. License
 

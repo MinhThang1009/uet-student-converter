@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Security report
+  - name: Security policy
     url: https://github.com/MinhThang1009/uet-student-converter/security/policy
-    about: Report security vulnerabilities privately, not as a public issue.
+    about: Read the security policy; do not disclose vulnerability details publicly.

@@ -2,15 +2,18 @@
 
 ## Scope
 
-This project handles student data. PDFs, Excel workbooks, reports, accounts,
-and passwords must be treated as sensitive during development.
+This repository is public. The converter may process student data locally, but
+real student data, accounts, passwords, and generated workbooks must never be
+committed or included in public issues, pull requests, tests, or logs.
 
 ## Reporting a vulnerability
 
-Do not open a public issue for a vulnerability or exposed data. The repository
-is private, but it does not yet have a published security contact. The
-maintainer must configure a private contact channel or GitHub Private
-Vulnerability Reporting before broader collaboration.
+Do not open a public issue or pull request with vulnerability details, exposed
+secrets, or student data. GitHub private vulnerability reporting is not enabled
+for this repository, and no dedicated security contact is published. Until a
+private reporting channel is available, do not disclose sensitive details
+publicly. If you already have a trusted private contact method for the
+maintainer, use it without sending real student data or credentials.
 
 Once a private channel is configured, reports should include:
 
@@ -23,6 +26,6 @@ Do not send real student data, credentials, or secrets in a report.
 
 ## Supported versions
 
-Only versions explicitly supported by the maintainer are considered for
-security fixes. The project has no public release yet; security changes must
-be reviewed before publishing.
+The project publishes GitHub Releases, but it does not currently document a
+supported-version window. Include the release tag or commit when reporting an
+issue; the maintainer will state which versions receive security fixes.
