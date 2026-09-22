@@ -5,7 +5,7 @@ and student-data handling requirements.
 
 ## Workflow
 
-The repository uses a private GitHub remote. Use GitHub Flow:
+The repository is public on GitHub. Use GitHub Flow:
 
 1. Create a branch from `main`, for example `feat/improve-pdf-parser`.
 2. Keep each branch and pull request focused on one objective.
@@ -46,9 +46,10 @@ and feature requests use the [issue forms](.github/ISSUE_TEMPLATE/). The
 `CODEOWNERS` file assigns review ownership to `@MinhThang1009`. The CI and
 documentation workflows must pass before a pull request is merged. Scheduled
 community-health and freshness checks may open reminder issues when maintenance
-inputs drift, and Scorecard reports supply-chain findings. A private security
-channel and branch protection still need to be configured before broader
-collaboration.
+inputs drift, and Scorecard reports supply-chain findings. Branch protection is
+not enabled on `main`; checks must be verified manually. Private vulnerability
+reporting is disabled; see [SECURITY.md](SECURITY.md) and do not post details
+publicly.
 
 ## Reporting issues
 
