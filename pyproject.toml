@@ -9,7 +9,7 @@ description = "Convert UET student lists from PDF to Excel using the project tem
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "PyMuPDF>=1.24,<2",
+    "PyMuPDF>=1.24,<3",
     "openpyxl>=3.1,<4",
 ]
 
